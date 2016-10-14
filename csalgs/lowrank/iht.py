@@ -3,9 +3,8 @@
 import numpy as np
 import numpy.linalg as la
 
-from ..cs.iht import constant_stepsize
 
-__all__ = ['adaptive_stepsize', 'constant_stepsize', 'iht_estimator']
+__all__ = ['adaptive_stepsize', 'iht_estimator']
 
 
 def _vec(A):

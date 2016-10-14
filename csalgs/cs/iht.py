@@ -8,7 +8,8 @@ import numpy as np
 from numpy.linalg import norm
 
 
-__all__ = ['constant_stepsize', 'adaptive_stepsize', 'iht_estimator']
+__all__ = ['constant_stepsize', 'adaptive_stepsize', 'iht_estimator',
+           'memory_stepsize']
 
 
 def _hard_threshold(x, nnz, retsupp=False):
@@ -36,6 +37,21 @@ def constant_stepsize(mu):
 
     """
     return (lambda *args, **kwargs: mu)
+
+
+def memory_stepsize(stepfun, const_steps=1, choose=lambda x: x[-1]):
+    def stepsize(*args, **kwargs):
+        if stepsize.counter >= const_steps:
+            mu = stepfun(*args, **kwargs)
+            stepsize.memory.append(mu)
+            stepsize.counter = 1
+        else:
+            stepsize.counter += 1
+        return choose(stepsize.memory)
+
+    stepsize.counter = float('Inf')
+    stepsize.memory = []
+    return stepsize
 
 
 def _same_supports(supp1, supp2):
