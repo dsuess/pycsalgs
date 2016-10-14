@@ -32,7 +32,7 @@ def constant_stepsize(mu):
     :returns: @todo
 
     """
-    return (lambda x, A, g, supp: mu)
+    return (lambda *args, **kwargs: mu)
 
 
 def _same_supports(supp1, supp2):
@@ -75,7 +75,7 @@ def adaptive_stepsize(rescale_const=.5, kappa=3.):
     return stepsize
 
 
-def csIHT(A, y, nnz, stepsize=adaptive_stepsize(), x_init=None):
+def iht_estimator(A, y, nnz, stepsize=adaptive_stepsize(), x_init=None):
     """@todo: Docstring for csIHT.
 
     :param A: Sensing matrix
