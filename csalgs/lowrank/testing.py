@@ -13,5 +13,5 @@ def random_lowrank_matrix(dim, rank, rgen=np.random):
     return A @ B.T
 
 
-def sensingmats_gaussian(measurements, dim, rgen=np.random):
+def sensingmat_gauss(measurements, dim, rgen=np.random):
     return rgen.randn(measurements, dim, dim) / np.sqrt(measurements)

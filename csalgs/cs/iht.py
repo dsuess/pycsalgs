@@ -8,6 +8,9 @@ import numpy as np
 from numpy.linalg import norm
 
 
+__all__ = ['constant_stepsize', 'adaptive_stepsize', 'iht_estimator']
+
+
 def _hard_threshold(x, nnz, retsupp=False):
     """Computes the best approximation of `x` with at most `nnz` nonzero
     entries
