@@ -15,3 +15,16 @@ def random_lowrank_matrix(dim, rank, rgen=np.random):
 
 def sensingmat_gauss(measurements, dim, rgen=np.random):
     return rgen.randn(measurements, dim, dim) / np.sqrt(measurements)
+
+
+def sensingmat_rank1(measurements, dim, independent=True, rgen=np.random):
+    A = rgen.randn(measurements, dim)
+    A /= np.linalg.norm(A, axis=1, keepdims=True)
+
+    if independent:
+        B = rgen.randn(measurements, dim)
+        B /= np.linalg.norm(A, axis=1, keepdims=True)
+    else:
+        B = A
+
+    return A[:, :, None] * B[:, None, :]

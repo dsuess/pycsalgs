@@ -39,7 +39,7 @@ def altmin_estimator(A, y, rank):
     :returns: @todo
 
     """
-    yA = np.sum(y[:, None, None] * A, axis=0)
+    yA = np.tensordot(y, A, axes=(0, 0))
     l_singular, _, _ = np.linalg.svd(yA / len(y))
     U = l_singular[:, :rank]
     shape_U, shape_V = (A.shape[1], rank), (A.shape[2], rank)
