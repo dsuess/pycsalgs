@@ -3,8 +3,19 @@
 import numpy as np
 
 
-def random_lowrank_matrix(dim, rank, hermitian=False, rgen=np.random):
-    return sensingmat_rank1(1, dim, hermitian=hermitian, rgen=rgen)[0]
+def random_lowrank_matrix(dim, rank, hermitian=True, rgen=np.random):
+    A = rgen.randn(dim, rank)
+    B = A if hermitian else rgen.randn(dim, rank)
+    return A @ B.T
+
+
+def random_lowrank_matrix_cnr(dim, rank, condition_scale=[1.], hermitian=True,
+                              rgen=np.random):
+    scale = rgen.choice(condition_scale, size=rank, replace=True).astype(np.float_)
+    scale = np.concatenate((scale, np.ones(dim - rank)))
+    A = random_lowrank_matrix(dim, rank, hermitian=hermitian, rgen=rgen)
+    U, s, V = np.linalg.svd(A)
+    return U @ np.diag(s * scale) @ V.T
 
 
 def sensingmat_gauss(measurements, dim, rgen=np.random):
