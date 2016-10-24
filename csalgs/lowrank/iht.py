@@ -13,7 +13,7 @@ def _vec(A):
     return A.reshape(newshape)
 
 
-def _hard_threshold(mat, rank, retproj=False):
+def hard_threshold(mat, rank, retproj=False):
     """PU, PV ... projectors on left/right eigenspaces"""
     U_full, s, Vstar_full = la.svd(mat)
     U = U_full[:, :rank]
@@ -50,11 +50,11 @@ def adaptive_stepsize(projection='row'):
 
 def iht_estimator(A, y, rank, stepsize=adaptive_stepsize(), x_init=None):
     x_hat = np.zeros(A.shape[1:]) if x_init is None else x_init
-    _, projectors = _hard_threshold(np.tensordot(y, A, axes=(-1, 0)), rank,
-                                    retproj=True)
+    _, projectors = hard_threshold(np.tensordot(y, A, axes=(-1, 0)), rank,
+                                   retproj=True)
 
     while True:
         g = np.tensordot(y - (_vec(A) @ _vec(x_hat)), A, axes=(-1, 0))
         mu = stepsize(A, g, projectors)
-        x_hat, projectors = _hard_threshold(x_hat + mu * g, rank, retproj=True)
+        x_hat, projectors = hard_threshold(x_hat + mu * g, rank, retproj=True)
         yield x_hat
