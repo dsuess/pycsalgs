@@ -13,12 +13,8 @@ def sensingmat_gauss(measurements, dim, rgen=np.random):
 
 def sensingmat_rank1(measurements, dim, hermitian=True, rgen=np.random):
     A = rgen.randn(measurements, dim)
-    A /= np.linalg.norm(A, axis=1, keepdims=True)
-
     if hermitian:
         B = A
     else:
         B = rgen.randn(measurements, dim)
-        B /= np.linalg.norm(A, axis=1, keepdims=True)
-
-    return A[:, :, None] * B[:, None, :]
+    return A[:, :, None] * B[:, None, :] / np.sqrt(measurements)
