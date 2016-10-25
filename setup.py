@@ -21,7 +21,7 @@ if __name__ == '__main__':
         packages=['csalgs'],
         package_dir={'csalgs': 'csalgs'},
         license="GPL",
-        install_requires=['numpy', 'cvxpy', 'mpnum>=0.2'],
+        install_requires=['numpy', 'cvxpy', 'scipy', 'theano', 'mpnum>=0.2'],
         keywords=[],
         classifiers=[
             "Operating System :: OS Indendent",
