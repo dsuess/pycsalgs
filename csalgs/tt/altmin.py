@@ -66,12 +66,14 @@ def altmin_step(A, y, X):
         shape = B.shape[1:]
         ltens = _linear_least_squares(B.reshape((B.shape[0], -1)), y)
         X.lt.update(pos, ltens.reshape(shape))
+        X.normalize(left=pos + 1)
 
     for pos in range(len(X) - 1, 0, -1):
         B = _get_optimmat(A, X, pos)
         shape = B.shape[1:]
         ltens = _linear_least_squares(B.reshape((B.shape[0], -1)), y)
         X.lt.update(pos, ltens.reshape(shape))
+        X.normalize(right=pos)
 
     return X
 
