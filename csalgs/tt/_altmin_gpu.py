@@ -156,7 +156,7 @@ class AMECodeGenCuda(object):
             c.LineComment("Shortcut for current row of design matrix"),
             c.LineComment("Carefull, current_row might be out of bounds!"),
             ConstPointerToConst(self._dtype, 'current_row', 'A + (mid * %i)'
-                                % sum(self._ranks))
+                                % sum(self._dims))
         ]
 
         return init_statements
