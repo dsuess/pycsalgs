@@ -5,11 +5,18 @@ import itertools as it
 import numpy as np
 from scipy.linalg.blas import dgemm
 
-import mpnum as mp
 from mpnum.mparray import _local_dot, _ltens_to_array
+from mpnum.special import sumup
 from warnings import warn
 
-__all__ = ['altmin_step', 'altmin_estimator']
+try:
+    from sklearn.utils.extmath import randomized_svd as svdfunc
+except ImportError:
+    warn("The randomized SVD is unavailable. Fallback to standard dense SVD." +
+         " Consider installing scikit-learn for much faster initialization.")
+    from mpnum._tools import truncated_svd as svdfunc
+
+__all__ = ['AltminEstimator']
 
 
 def _llsq_solver_fast(A, y):
@@ -31,9 +38,9 @@ def _llsq_solver_fast(A, y):
 
     """
     if type(A) != np.ndarray or not A.flags['C_CONTIGUOUS']:
-        warn('Matrix a is not a C-contiguous numpy array. ' +
-             'The solver will create a copy, which will result' +
-             ' in increased memory usage.')
+        warn("Matrix a is not a C-contiguous numpy array. " +
+             "The solver will create a copy, which will result" +
+             " in increased memory usage.")
 
     A = np.asarray(A, order='c')
     i = dgemm(alpha=1.0, a=A.T, b=A.T, trans_b=True)
@@ -66,36 +73,57 @@ def _get_optimmat_row(Ai, X, pos):
     return b_l[:, None, None] * a_c[None, :, None] * b_r[None, None, :]
 
 
-def _get_optimmat(A, X, pos):
-    return np.array([_get_optimmat_row(a, X, pos) for a in A])
+class AltminEstimator(object):
+    """Docstring for AltminEstimator. """
 
+    def __init__(self, A, y, rank, X_init=None, llsqsolve=_llsq_solver_fast):
+        """@todo: to be defined1.
 
-def altmin_step(A, y, X, llsq_solver=_llsq_solver_pinv):
-    for pos in range(len(X) - 1):
-        B = _get_optimmat(A, X, pos)
-        shape = B.shape[1:]
-        ltens = llsq_solver(B.reshape((B.shape[0], -1)), y)
-        X.lt.update(pos, ltens.reshape(shape))
-        X.normalize(left=pos + 1)
+        :param A: List of mpnum.MPArray containing the measurements. For now,
+            only product measurements (i.e. of rank 1) are allowed
+        :param y: List containing the measured values
+        :param rank: Rank the reconstruction should have (either single integer
+            or list of integers for each bond separately)
+        :param X_init:
 
-    for pos in range(len(X) - 1, 0, -1):
-        B = _get_optimmat(A, X, pos)
-        shape = B.shape[1:]
-        ltens = llsq_solver(B.reshape((B.shape[0], -1)), y)
-        X.lt.update(pos, ltens.reshape(shape))
-        X.normalize(right=pos)
+        """
+        assert len(A) == len(y)
+        assert all(all(bdim == 1 for bdim in a.bdims) for a in A)
 
-    return X
+        self._A = A
+        self._y = y
+        self._rank = rank
+        self._llsqsolve = llsqsolve
 
+        if X_init is None:
+            self._X_init = sumup(A, rank, weights=y, svdfunc=svdfunc)
+        else:
+            self._X_init = X_init
 
-def altmin_estimator(A, y, rank, X_init=None, llsq_solver=_llsq_solver_pinv):
-    if X_init is None:
-        X_sharp = mp.sumup(A, weights=y).compression('svd', bdim=rank)
-    else:
-        X_sharp = X_init
+    def _get_optimmat(self, X, pos):
+        return np.array([_get_optimmat_row(a, X, pos) for a in self._A])
 
-    yield X_sharp.copy()
+    def _altmin_step(self, X):
+        for pos in range(len(X) - 1):
+            B = self._get_optimmat(X, pos)
+            shape = B.shape[1:]
+            ltens = self._llsqsolve(B.reshape((B.shape[0], -1)), self._y)
+            X.lt.update(pos, ltens.reshape(shape))
+            X.normalize(left=pos + 1)
 
-    while True:
-        altmin_step(A, y, X_sharp, llsq_solver=llsq_solver)
+        for pos in range(len(X) - 1, 0, -1):
+            B = self._get_optimmat(X, pos)
+            shape = B.shape[1:]
+            ltens = self._llsqsolve(B.reshape((B.shape[0], -1)), self._y)
+            X.lt.update(pos, ltens.reshape(shape))
+            X.normalize(right=pos)
+
+        return X
+
+    def __iter__(self):
+        X_sharp = self._X_init
         yield X_sharp.copy()
+
+        while True:
+            self._altmin_step(X_sharp)
+            yield X_sharp.copy()
