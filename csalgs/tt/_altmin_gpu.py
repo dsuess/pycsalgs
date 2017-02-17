@@ -1,9 +1,17 @@
 # encoding: utf-8
 
+import collections
+
 import numpy as np
 
 import cgen as c
 import cgen.cuda as ccu
+import pycuda.autoinit
+import pycuda.driver as cuda
+import pycuda.gpuarray as gpuarray
+from pycoda.compiler import SourceModule
+
+from .altmin import AltminEstimator, _llsq_solver_fast
 
 
 DGEMV_SRC = c.LiteralLines("""
@@ -306,3 +314,36 @@ class AMECodeGenCuda(object):
         """
         return c.Module([DGEMV_SRC] +
                         [self.generate_optimmat_code(pos) for pos in range(self._sites)])
+
+
+class AltminEstimatorGPU(AltminEstimator):
+    """Docstring for AltminEstimatorGPU. """
+
+    def __init__(self, A, y, rank, X_init=None, llsqsolve=_llsq_solver_fast,
+                 cuda_blocksize=512):
+        """@todo: to be defined1. """
+        super().__init__(A, y, rank, X_init=X_init, llsqsolve=llsqsolve)
+        dims = [p[0] for p in A[0].pdims]
+        self._A = gpuarray.to_gpu(np.array([[ltens[0, :, 0] for ltens in a.lt]
+                                            for a in A]))
+        self._cuda_bs = cuda_blocksize
+
+        codegen = AMECodeGenCuda(dims, self._rank, len(y),
+                                 cuda_blocksize=self._cuda_bs)
+        mod = SourceModule(codegen.generate())
+        self._get_optimmat = [mod.get_function('get_optimmat_%i' % i)
+                              for i in range(len(dims))]
+
+    def get_optimmat(self, X, pos):
+        k_left = 1 if pos == 0 else X.bdims[pos - 1]
+        k_right = 1 if pos == len(X) - 1 else X.bdims[pos]
+        shape_L = (self._A.shape[0], k_left, X.pdims[pos][0], k_right)
+        L_gpu = gpuarray.empty(shape_L, np.float_)
+        ltens_gpu = [gpuarray.to_gpu(np.ascontiguousarray(np.rollaxis(x, 2, start=1)))
+                     for x in X.lt]
+
+        self._get_optimmat[pos](self._A, *ltens_gpu, L_gpu, block=(self._cuda_bs, 1, 1),
+                                grid=(self._A.shape[0] // self._cuda_bs + 1, 1, 1))
+
+        return L_gpu.get()
+
