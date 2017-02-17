@@ -5,6 +5,8 @@ import ipyparallel
 import pandas as pd
 from os import environ
 from tools.helpers import AsyncTaskWatcher
+from time import sleep
+from ipyparallel import require
 
 
 CLUSTER_ID = environ.get('CLUSTER_ID', None)
@@ -22,8 +24,8 @@ RGEN = np.random.RandomState(1235)
 
 
 with _CLIENTS[:].sync_imports():
-    import numpy as np
-    import mpnum as mp
+    import numpy
+    import mpnum
     from csalgs.tt.altmin import AltminEstimator, _llsq_solver_fast
     from mpnum.special import inner_prod_mps, sumup
     from sklearn.utils.extmath import randomized_svd
@@ -32,10 +34,10 @@ with _CLIENTS[:].sync_imports():
 def experiment_generator(sites, dim, rank, C, dist_crit=1e-8, maxiter=25):
 
     def run(seed):
-        rgen = np.random.RandomState(seed)
-        X = mp.random_mpa(sites, dim, rank, randstate=rgen, normalized=True)
+        rgen = numpy.random.RandomState(seed)
+        X = mpnum.random_mpa(sites, dim, rank, randstate=rgen, normalized=True)
         nr_measurements = int(C * dim * sites * rank**2)
-        A = [mp.random_mpa(len(X), X.pdims, 1, randstate=rgen, dtype=X.dtype)
+        A = [mpnum.random_mpa(len(X), X.pdims, 1, randstate=rgen, dtype=X.dtype)
              for _ in range(nr_measurements)]
         y = [inner_prod_mps(a, X) for a in A]
 
@@ -46,10 +48,10 @@ def experiment_generator(sites, dim, rank, C, dist_crit=1e-8, maxiter=25):
         X_old = next(solution)
         for _ in range(maxiter):
             X_sharp = next(solution)
-            if mp.normdist(X_old, X_sharp) < dist_crit:
+            if mpnum.normdist(X_old, X_sharp) < dist_crit:
                 break
             X_old = X_sharp
-        return {'X': X, 'X_sharp': X_sharp, 'dist': mp.normdist(X, X_sharp),
+        return {'X': X, 'X_sharp': X_sharp, 'dist': mpnum.normdist(X, X_sharp),
                 'C': C, 'seed': seed, 'dim': dim, 'rank': rank, 'sites': sites}
 
     return run
