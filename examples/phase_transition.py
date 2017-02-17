@@ -26,7 +26,7 @@ RGEN = np.random.RandomState(1235)
 with _CLIENTS[:].sync_imports():
     import numpy
     import mpnum
-    from csalgs.tt.altmin import AltminEstimator, _llsq_solver_fast
+    from csalgs.tt.altmin import AltminEstimator
     from mpnum.special import inner_prod_mps, sumup
     from sklearn.utils.extmath import randomized_svd
 
@@ -42,7 +42,7 @@ def experiment_generator(sites, dim, rank, C, dist_crit=1e-8, maxiter=25):
         y = [inner_prod_mps(a, X) for a in A]
 
         X_init = sumup(A, rank, weights=y, svdfunc=randomized_svd)
-        estimator = AltminEstimator(A, y, rank, X_init=X_init, llsqsolve=_llsq_solver_fast)
+        estimator = AltminEstimator(A, y, rank, X_init=X_init)
         solution = iter(estimator)
 
         X_old = next(solution)

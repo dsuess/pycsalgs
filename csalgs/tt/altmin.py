@@ -62,6 +62,20 @@ def _llsq_solver_pinv(A, y):
     return B @ A.T @ y
 
 
+def llsqsolve(A, y):
+    """@todo: Docstring for llsqsolve.
+
+    :param A: @todo
+    :param y: @todo
+    :returns: @todo
+
+    """
+    try:
+        return _llsq_solver_fast(A, y)
+    except np.linalg.LinAlgError:
+        return _llsq_solver_pinv(A, y)
+
+
 def _get_optimmat_row(Ai, X, pos):
     iterator = zip(Ai.lt, X.lt)
 
@@ -77,7 +91,7 @@ def _get_optimmat_row(Ai, X, pos):
 class AltminEstimator(object):
     """Docstring for AltminEstimator. """
 
-    def __init__(self, A, y, rank, X_init=None, llsqsolve=_llsq_solver_fast):
+    def __init__(self, A, y, rank, X_init=None, llsqsolve=llsqsolve):
         """@todo: to be defined1.
 
         :param A: List of mpnum.MPArray containing the measurements. For now,
