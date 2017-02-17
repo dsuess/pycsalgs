@@ -1,6 +1,7 @@
 #encoding: utf-8
 
 import itertools as it
+import collections
 
 import numpy as np
 from scipy.linalg.blas import dgemm
@@ -92,6 +93,8 @@ class AltminEstimator(object):
 
         self._A = A
         self._y = y
+        self._rank = tuple(rank) if isinstance(rank, collections.Iterable) \
+                else (rank,) * (len(A[0]) - 1)
         self._rank = rank
         self._llsqsolve = llsqsolve
 
