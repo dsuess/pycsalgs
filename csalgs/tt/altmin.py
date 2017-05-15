@@ -158,7 +158,7 @@ class AltminEstimator(object):
             left_terms = np.ones((len(self._A), 1))
             for pos in range(len(X) - 1):
                 right_terms = (partial.pop().ravel() for partial in partials)
-                rows = [b_l[:, None, None] * a.lt[pos] * b_r[None, None, :]
+                rows = [b_l[:, None, None] * a.lt._ltens[pos] * b_r[None, None, :]
                         for b_l, a, b_r in zip(left_terms, self._A, right_terms)]
                 yield pos, np.asarray(rows)
                 left_terms = [np.dot(b_l, np.dot(a.lt._ltens[pos][0, :, 0], X.lt._ltens[pos]))
@@ -169,7 +169,7 @@ class AltminEstimator(object):
             right_terms = np.ones((len(self._A), 1))
             for pos in range(len(X) - 1, 0, -1):
                 left_terms = (partial.pop().ravel() for partial in partials)
-                rows = [b_l[:, None, None] * a.lt[pos] * b_r[None, None, :]
+                rows = [b_l[:, None, None] * a.lt._ltens[pos] * b_r[None, None, :]
                         for b_l, a, b_r in zip(left_terms, self._A, right_terms)]
                 yield pos, np.asarray(rows)
                 right_terms = [np.dot(np.dot(a.lt._ltens[pos][0, :, 0], X.lt._ltens[pos]), b_r)
