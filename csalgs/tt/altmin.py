@@ -87,6 +87,7 @@ def _get_optimmat_row(Ai, X, pos):
 
     return b_l[:, None, None] * a_c[None, :, None] * b_r[None, None, :]
 
+
 def partial_inner_prod(mpa1, mpa2, direction):
     """
 
@@ -116,9 +117,8 @@ def partial_inner_prod(mpa1, mpa2, direction):
         res = np.dot(next(ltens1)[0, :, 0].conj(), next(ltens2))
         yield res
         for l1, l2 in zip(ltens1, ltens2):
-            res = np.dot(res, np.dot(l1[0, :, 0].conj(), l2))
+            res = np.dot(np.dot(l1[0, :, 0].conj(), l2), res)
             yield res
-
 
 
 class AltminEstimator(object):
@@ -151,15 +151,32 @@ class AltminEstimator(object):
             self._X_init = X_init
 
     def _get_optimmat(self, X, direction='right'):
+        # get rid of the last entry since that is the full inner product
+        partials = [list(partial_inner_prod(a, X, direction))[:-1]
+                    for a in self._A]
         if direction is 'right':
-            idx = range(len(X) - 1)
+            left_terms = np.ones((len(self._A), 1))
+            for pos in range(len(X) - 1):
+                right_terms = (partial.pop().ravel() for partial in partials)
+                rows = [b_l[:, None, None] * a.lt[pos] * b_r[None, None, :]
+                        for b_l, a, b_r in zip(left_terms, self._A, right_terms)]
+                yield pos, np.asarray(rows)
+                left_terms = [np.dot(b_l, _local_dot(a.lt[pos], X.lt[pos], axes=(1, 1)))
+                              for b_l, a in zip(left_terms, self._A)]
+            return
+
         elif direction is 'left':
-            idx = range(len(X) - 1, 0, -1)
+            right_terms = np.ones((len(self._A), 1))
+            for pos in range(len(X) - 1, 0, -1):
+                left_terms = (partial.pop().ravel() for partial in partials)
+                rows = [b_l[:, None, None] * a.lt[pos] * b_r[None, None, :]
+                        for b_l, a, b_r in zip(left_terms, self._A, right_terms)]
+                yield pos, np.asarray(rows)
+                right_terms = [np.dot(_local_dot(a.lt[pos], X.lt[pos], axes=(1, 1)), b_r)
+                              for b_r, a in zip(right_terms, self._A)]
+            return
         else:
             raise ValueError(f"{direction} is not a valid direction")
-
-        for pos in idx:
-            yield pos, np.array([_get_optimmat_row(a, X, pos) for a in self._A])
 
     def _altmin_step(self, X):
         for pos, B in self._get_optimmat(X, direction='right'):
