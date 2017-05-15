@@ -117,19 +117,25 @@ class AltminEstimator(object):
         else:
             self._X_init = X_init
 
-    def _get_optimmat(self, X, pos):
-        return np.array([_get_optimmat_row(a, X, pos) for a in self._A])
+    def _get_optimmat(self, X, direction='right'):
+        if direction is 'right':
+            idx = range(len(X) - 1)
+        elif direction is 'left':
+            idx = range(len(X) - 1, 0, -1)
+        else:
+            raise ValueError(f"{direction} is not a valid direction")
+
+        for pos in idx:
+            yield pos, np.array([_get_optimmat_row(a, X, pos) for a in self._A])
 
     def _altmin_step(self, X):
-        for pos in range(len(X) - 1):
-            B = self._get_optimmat(X, pos)
+        for pos, B in self._get_optimmat(X, direction='right'):
             shape = B.shape[1:]
             ltens = self._llsqsolve(B.reshape((B.shape[0], -1)), self._y)
             X.lt.update(pos, ltens.reshape(shape))
             X.normalize(left=pos + 1)
 
-        for pos in range(len(X) - 1, 0, -1):
-            B = self._get_optimmat(X, pos)
+        for pos, B in self._get_optimmat(X, direction='left'):
             shape = B.shape[1:]
             ltens = self._llsqsolve(B.reshape((B.shape[0], -1)), self._y)
             X.lt.update(pos, ltens.reshape(shape))
