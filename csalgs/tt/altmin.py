@@ -101,8 +101,8 @@ def partial_inner_prod(mpa1, mpa2, direction):
     assert all(pleg == 1 for pleg in mpa2.plegs)
 
     if direction is 'left':
-        ltens1 = iter(mpa1.lt)
-        ltens2 = iter(mpa2.lt)
+        ltens1 = iter(mpa1.lt._ltens)
+        ltens2 = iter(mpa2.lt._ltens)
 
         res = np.dot(next(ltens1)[0, :, 0].conj(), next(ltens2))
         yield res
@@ -111,8 +111,8 @@ def partial_inner_prod(mpa1, mpa2, direction):
             yield res
 
     elif direction is 'right':
-        ltens1 = iter(mpa1.lt[::-1])
-        ltens2 = iter(mpa2.lt[::-1])
+        ltens1 = iter(mpa1.lt._ltens[::-1])
+        ltens2 = iter(mpa2.lt._ltens[::-1])
 
         res = np.dot(next(ltens1)[0, :, 0].conj(), next(ltens2))
         yield res
@@ -161,7 +161,7 @@ class AltminEstimator(object):
                 rows = [b_l[:, None, None] * a.lt[pos] * b_r[None, None, :]
                         for b_l, a, b_r in zip(left_terms, self._A, right_terms)]
                 yield pos, np.asarray(rows)
-                left_terms = [np.dot(b_l, _local_dot(a.lt[pos], X.lt[pos], axes=(1, 1)))
+                left_terms = [np.dot(b_l, np.dot(a.lt._ltens[pos][0, :, 0], X.lt._ltens[pos]))
                               for b_l, a in zip(left_terms, self._A)]
             return
 
@@ -172,7 +172,7 @@ class AltminEstimator(object):
                 rows = [b_l[:, None, None] * a.lt[pos] * b_r[None, None, :]
                         for b_l, a, b_r in zip(left_terms, self._A, right_terms)]
                 yield pos, np.asarray(rows)
-                right_terms = [np.dot(_local_dot(a.lt[pos], X.lt[pos], axes=(1, 1)), b_r)
+                right_terms = [np.dot(np.dot(a.lt._ltens[pos][0, :, 0], X.lt._ltens[pos]), b_r)
                               for b_r, a in zip(right_terms, self._A)]
             return
         else:
