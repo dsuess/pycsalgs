@@ -6,7 +6,7 @@ import collections
 import numpy as np
 from scipy.linalg.blas import dgemm
 
-from mpnum.mparray import _local_dot, _ltens_to_array
+from mpnum.mparray import _local_dot, _ltens_to_array, normdist
 from mpnum.special import sumup
 from warnings import warn
 
@@ -169,7 +169,7 @@ class AltminEstimator(object):
             right_terms = np.ones((len(self._A), 1))
             for pos in range(len(X) - 1, 0, -1):
                 left_terms = (partial.pop().ravel() for partial in partials)
-                rows = [b_l[:, None, None] * a.lt._ltens[pos] * b_r[None, None, :]
+                rows = [b_l[:, None, None] * a.lt[pos] * b_r[None, None, :]
                         for b_l, a, b_r in zip(left_terms, self._A, right_terms)]
                 yield pos, np.asarray(rows)
                 right_terms = [np.dot(np.dot(a.lt._ltens[pos][0, :, 0], X.lt._ltens[pos]), b_r)
@@ -200,3 +200,12 @@ class AltminEstimator(object):
         while True:
             self._altmin_step(X_sharp)
             yield X_sharp.copy()
+
+    def estimate(self, n_steps=25, thresh=None):
+        X_old = self._X_init.copy()
+        for _ in range(n_steps):
+            X_new = self._altmin_step(X_old.copy())
+            if (thresh is not None) and (normdist(X_old, X_new) < thresh):
+                break
+            X_old = X_new
+        return X_new
