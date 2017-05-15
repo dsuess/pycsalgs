@@ -87,6 +87,39 @@ def _get_optimmat_row(Ai, X, pos):
 
     return b_l[:, None, None] * a_c[None, :, None] * b_r[None, None, :]
 
+def partial_inner_prod(mpa1, mpa2, direction):
+    """
+
+    :param mpa1: MPArray with one physical leg per site and bond dimension 1
+    :param mpa2: MPArray with same physical shape as mpa1
+    :returns: @TODO
+
+    """
+    assert all(bdim == 1 for bdim in mpa1.bdims)
+    assert all(pleg == 1 for pleg in mpa1.plegs)
+    assert all(pleg == 1 for pleg in mpa2.plegs)
+
+    if direction is 'left':
+        ltens1 = iter(mpa1.lt)
+        ltens2 = iter(mpa2.lt)
+
+        res = np.dot(next(ltens1)[0, :, 0].conj(), next(ltens2))
+        yield res
+        for l1, l2 in zip(ltens1, ltens2):
+            res = np.dot(res, np.dot(l1[0, :, 0].conj(), l2))
+            yield res
+
+    elif direction is 'right':
+        ltens1 = iter(mpa1.lt[::-1])
+        ltens2 = iter(mpa2.lt[::-1])
+
+        res = np.dot(next(ltens1)[0, :, 0].conj(), next(ltens2))
+        yield res
+        for l1, l2 in zip(ltens1, ltens2):
+            res = np.dot(res, np.dot(l1[0, :, 0].conj(), l2))
+            yield res
+
+
 
 class AltminEstimator(object):
     """Docstring for AltminEstimator. """
