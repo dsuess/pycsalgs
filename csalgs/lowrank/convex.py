@@ -12,6 +12,18 @@ import numpy as np
 __all__ = ['nucmin_estimator']
 
 
+def _expval(A, x):
+    """@todo: Docstring for _expval.
+
+    :param A: @todo
+    :param x: @todo
+    :returns: @todo
+
+    """
+    A_map = A.transpose(0, 2, 1).reshape((len(A), -1))
+    return A_map * cvx.vec(x)
+
+
 def nucmin_estimator(A, y, eta=None, **kwargs):
     """@todo: Docstring for nucmin_estimator.
 
@@ -21,15 +33,13 @@ def nucmin_estimator(A, y, eta=None, **kwargs):
     :returns: @todo
 
     """
-    dim = A.shape[1]
-    x_sharp = cvx.Variable(dim, dim)
+    x_sharp = cvx.Variable(A.shape[1], A.shape[2])
     objective = cvx.Minimize(cvx.normNuc(x_sharp))
 
     if eta is None:
-        constraints = [cvx.trace(a.T * x_sharp) == yi for a, yi in zip(A, y)]
+        constraints = [_expval(A, x_sharp) == y]
     else:
-        constraints = [cvx.abs(cvx.trace(a.T * x_sharp) - yi) < eta
-                       for a, yi in zip(A, y)]
+        constraints = [cvx.abs(_expval(A, x_sharp) - y) < eta]
 
     problem = cvx.Problem(objective, constraints)
     problem.solve(**kwargs)
