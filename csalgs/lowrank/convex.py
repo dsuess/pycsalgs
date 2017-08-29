@@ -9,7 +9,7 @@ import cvxpy as cvx
 import numpy as np
 
 
-__all__ = ['nucmin_estimator']
+__all__ = ['nucmin_estimator', 'constrained_l2_estimator']
 
 
 def _expval(A, x):
@@ -20,6 +20,7 @@ def _expval(A, x):
     :returns: @todo
 
     """
+    # transpose A since cvxpy vectorizes in Fortran order
     A_map = A.transpose(0, 2, 1).reshape((len(A), -1))
     return A_map * cvx.vec(x)
 
@@ -47,3 +48,16 @@ def nucmin_estimator(A, y, eta=None, **kwargs):
     if problem.status not in ['optimal']:
         raise ValueError("Optimization did not converge: " + problem.status)
     return np.array(x_sharp.value)
+
+
+def constrained_l2_estimator(A, Y, alpha, **kwargs):
+    x_sharp = cvx.Variable(rows=A.shape[1], cols=A.shape[2])
+    objective = cvx.Minimize(cvx.norm2(Y - _expval(A, x_sharp)))
+    constraints = [cvx.norm(x_sharp, p='nuc') <= alpha]
+
+    problem = cvx.Problem(objective, constraints)
+    problem.solve(**kwargs)
+
+    if problem.status not in ['optimal']:
+        raise ValueError("Optimization did not converge: " + problem.status)
+    return np.asarray(x_sharp.value)
