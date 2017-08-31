@@ -8,10 +8,10 @@ This is a small collection of compressed sensing/low rank matrix recovery algori
 - `csalg.tt`: Low-rank tensor recovery for the tensor train format
   - `iht.py`: Iterative hard thresholding (projected gradient descent)
   - `altmin.py`: Alternating Least Squares
-  - `_altmin_gpu.py`: A CUDA implementation of alternating least squares 
+  - `_altmin_gpu.py`: A CUDA implementation of alternating least squares
 - `csalgs.lowrank`: Low-rank matrix recovery
-  - `iht.py`: Iterative hard thresholding (projected gradient descent)
-  - `convex.py`: Convex optimization methods (nuclear norm minimization)
+  - `gradient.py`: Gradient based schemes such as Iterative hard thresholding (projected gradient descent) and conjugated gradient descent
+  - `convex.py`: Convex optimization methods (nuclear norm minimization and constrained l2 minimization)
   - `altmin.py`: Alternating Least Squares
 - `csalg.cs`: Compressed Sensing (Recovery of sparse vectors)
   - `iht.py`: Iterative hard thresholding (projected gradient descent)

@@ -1,10 +1,12 @@
 # encoding: utf-8
 
+import itertools as it
+
 import numpy as np
 import numpy.linalg as la
+from scipy.sparse.linalg import svds
 
-
-__all__ = ['adaptive_stepsize', 'iht_estimator']
+__all__ = ['adaptive_stepsize', 'iht_estimator', 'cgm_estimator']
 
 
 def _vec(A):
@@ -58,3 +60,33 @@ def iht_estimator(A, y, rank, stepsize=adaptive_stepsize(), x_init=None):
         mu = stepsize(A, g, projectors)
         x_hat, projectors = hard_threshold(x_hat + mu * g, rank, retproj=True)
         yield x_hat
+
+
+def _expval(A, x):
+    return np.dot(A.reshape((len(A), -1)), x.ravel())
+
+
+def _cgm_iterator(A, y, alpha, svds=svds, ret_gap=False):
+    x = np.zeros(A.shape[1:3], dtype=A.dtype)
+    for iteration in it.count():
+        z = _expval(A, x)
+        u, _, v = svds(np.tensordot(z - y, A, axes=(0, 0)), 1)
+        h = - alpha * u * v
+        eta = 2 / (iteration + 2)
+        x = (1 - eta) * x + eta * h
+
+        duality_gap = np.dot(z - _expval(A, h), z - y)
+        yield x, duality_gap
+
+
+def cgm_estimator(A, y, alpha, relerr=1e-1, maxiter=int(1e6)):
+    """@todo: Docstring for cgm_estimator.
+
+    """
+    solution = _cgm_iterator(A, y, alpha, ret_gap=True)
+    for x, gap in it.islice(solution, maxiter):
+        if gap < relerr:
+            return x
+
+    raise ValueError("Did not find solution with error < {} in {} iterations"
+                     .format(relerr, maxiter))
