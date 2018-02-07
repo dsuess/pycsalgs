@@ -10,12 +10,7 @@ from mpnum.mparray import _local_dot, _ltens_to_array, normdist
 from mpnum.special import sumup
 from warnings import warn
 
-try:
-    from sklearn.utils.extmath import randomized_svd as svdfunc
-except ImportError:
-    warn("The randomized SVD is unavailable. Fallback to standard dense SVD." +
-         " Consider installing scikit-learn for much faster initialization.")
-    from mpnum._tools import truncated_svd as svdfunc
+from mpnum.utils.extmath import randomized_svd as svdfunc
 
 __all__ = ['AltminEstimator']
 
@@ -96,9 +91,9 @@ def partial_inner_prod(mpa1, mpa2, direction):
     :returns: @TODO
 
     """
-    assert all(bdim == 1 for bdim in mpa1.bdims)
-    assert all(pleg == 1 for pleg in mpa1.plegs)
-    assert all(pleg == 1 for pleg in mpa2.plegs)
+    assert all(rank == 1 for rank in mpa1.ranks)
+    assert all(pleg == 1 for pleg in mpa1.ndims)
+    assert all(pleg == 1 for pleg in mpa2.ndims)
 
     if direction is 'left':
         ltens1 = iter(mpa1.lt._ltens)
@@ -136,7 +131,7 @@ class AltminEstimator(object):
 
         """
         assert len(A) == len(y)
-        assert all(all(bdim == 1 for bdim in a.bdims) for a in A)
+        assert all(all(rank == 1 for rank in a.ranks) for a in A)
 
         self._A = A
         self._y = y
@@ -183,13 +178,13 @@ class AltminEstimator(object):
             shape = B.shape[1:]
             ltens = self._llsqsolve(B.reshape((B.shape[0], -1)), self._y)
             X.lt.update(pos, ltens.reshape(shape))
-            X.normalize(left=pos + 1)
+            X.canonicalize(left=pos + 1)
 
         for pos, B in self._get_optimmat(X, direction='left'):
             shape = B.shape[1:]
             ltens = self._llsqsolve(B.reshape((B.shape[0], -1)), self._y)
             X.lt.update(pos, ltens.reshape(shape))
-            X.normalize(right=pos)
+            X.canonicalize(right=pos)
 
         return X
 
