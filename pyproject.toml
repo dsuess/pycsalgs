@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "pycsalgs"
+version = "0.1.0"
+description = ""
+authors = ["Daniel Suess <daniel@dsuess.me>"]
+license = "GPLv3"
+
+[tool.poetry.dependencies]
+python = "^3.6"
+cvxpy = "^1.1.7"
+numpy = "^1.19.4"
+mpnum = "^1.0.2"
+scipy = "^1.5.4"
+pycuda = { version = "*", optional = true }
+cgen = { version = "*", optional = true }
+
+[tool.poetry.extras]
+gpu = ["pycuda", "cgen"]
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
