@@ -95,7 +95,7 @@ def partial_inner_prod(mpa1, mpa2, direction):
     assert all(pleg == 1 for pleg in mpa1.ndims)
     assert all(pleg == 1 for pleg in mpa2.ndims)
 
-    if direction is 'left':
+    if direction == 'left':
         ltens1 = iter(mpa1.lt._ltens)
         ltens2 = iter(mpa2.lt._ltens)
 
@@ -105,7 +105,7 @@ def partial_inner_prod(mpa1, mpa2, direction):
             res = np.dot(res, np.dot(l1[0, :, 0].conj(), l2))
             yield res
 
-    elif direction is 'right':
+    elif direction == 'right':
         ltens1 = iter(mpa1.lt._ltens[::-1])
         ltens2 = iter(mpa2.lt._ltens[::-1])
 
@@ -149,7 +149,7 @@ class AltminEstimator(object):
         # get rid of the last entry since that is the full inner product
         partials = [list(partial_inner_prod(a, X, direction))[:-1]
                     for a in self._A]
-        if direction is 'right':
+        if direction == 'right':
             left_terms = np.ones((len(self._A), 1))
             for pos in range(len(X) - 1):
                 right_terms = (partial.pop().ravel() for partial in partials)
@@ -160,7 +160,7 @@ class AltminEstimator(object):
                               for b_l, a in zip(left_terms, self._A)]
             return
 
-        elif direction is 'left':
+        elif direction == 'left':
             right_terms = np.ones((len(self._A), 1))
             for pos in range(len(X) - 1, 0, -1):
                 left_terms = (partial.pop().ravel() for partial in partials)

@@ -8,7 +8,7 @@ import numpy as np
 
 import mpnum as mp
 import mpnum.special as mpsp
-from mpnum._tools import compression_svd
+from mpnum._testing import compression_svd
 
 
 __all__ = ['iht_estimator', 'iht_estimator_mpa']
